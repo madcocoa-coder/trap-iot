@@ -1,0 +1,259 @@
+<title>罠猟IoT 机上調査</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap");
+:root{
+--bg:#f6f5f0;--fg:#1e2420;--muted:#59615b;--line:#d8d5ca;--surface:#ffffff;
+--accent:#1f4d3a;--accent-soft:#e1ebe4;--on-accent:#ffffff;
+--note-bg:#fbf0d6;--note-line:#c29a3d;
+--ok-bg:#dcebf7;--ok-fg:#174a73;--sum-bg:#fbe6c4;--sum-fg:#7a4a05;
+--est-bg:#eadff5;--est-fg:#52317a;--unk-bg:#f5dada;--unk-fg:#8a2222;
+--pt-ref:#8a2222;
+}
+@media (prefers-color-scheme: dark){
+:root:not([data-theme="light"]){
+--bg:#131916;--fg:#e4e7e2;--muted:#a0a9a3;--line:#33403a;--surface:#1a221e;
+--accent:#86c4a4;--accent-soft:#223229;--on-accent:#10201a;
+--note-bg:#33290f;--note-line:#b08a30;
+--ok-bg:#1c3347;--ok-fg:#a2cdf0;--sum-bg:#3d2d10;--sum-fg:#f0c67e;
+--est-bg:#35274a;--est-fg:#cfb4ee;--unk-bg:#4a2222;--unk-fg:#f2a8a8;
+--pt-ref:#f2a8a8;
+color-scheme:dark}}
+:root[data-theme="dark"]{
+--bg:#131916;--fg:#e4e7e2;--muted:#a0a9a3;--line:#33403a;--surface:#1a221e;
+--accent:#86c4a4;--accent-soft:#223229;--on-accent:#10201a;
+--note-bg:#33290f;--note-line:#b08a30;
+--ok-bg:#1c3347;--ok-fg:#a2cdf0;--sum-bg:#3d2d10;--sum-fg:#f0c67e;
+--est-bg:#35274a;--est-fg:#cfb4ee;--unk-bg:#4a2222;--unk-fg:#f2a8a8;
+--pt-ref:#f2a8a8;
+color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Noto Sans JP",system-ui,"Hiragino Sans","Yu Gothic",sans-serif;font-size:16px;line-height:1.75;overflow-x:hidden}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px;max-width:1040px;margin:0 auto;min-width:0}
+.wrap section>*:not(.scroll){max-width:720px}
+header.top{border-bottom:3px solid var(--accent);padding-bottom:16px;margin-bottom:8px;max-width:720px}
+h1{font-size:1.6rem;line-height:1.35;margin:0 0 4px;color:var(--accent)}
+.meta{color:var(--muted);font-size:.9rem;margin:0}
+h2{font-size:1.25rem;line-height:1.4;margin:48px 0 12px;padding-top:12px;border-top:1px solid var(--line);color:var(--accent)}
+h2 .no{font-variant-numeric:tabular-nums;margin-right:.4em;color:var(--muted);font-weight:400}
+h3{font-size:1.05rem;margin:28px 0 6px}
+p,ul,ol{margin:8px 0}
+ul,ol{padding-left:1.3em}
+li{margin:4px 0}
+li,td,th,p{min-width:0;overflow-wrap:anywhere}
+a{color:var(--accent);text-underline-offset:2px}
+.notice{background:var(--note-bg);border-left:5px solid var(--note-line);padding:12px 14px;margin:16px 0;border-radius:2px;max-width:720px}
+.notice strong{display:block;margin-bottom:2px}
+.callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:10px 14px;margin:12px 0;border-radius:2px}
+.pill{display:inline-block;font-size:.72rem;line-height:1.5;font-weight:700;padding:0 .55em;border-radius:999px;white-space:nowrap;vertical-align:.08em}
+.p-ok{background:var(--ok-bg);color:var(--ok-fg)}
+.p-sum{background:var(--sum-bg);color:var(--sum-fg)}
+.p-est{background:var(--est-bg);color:var(--est-fg)}
+.p-unk{background:var(--unk-bg);color:var(--unk-fg)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:12px 0;border:1px solid var(--line);border-radius:3px;background:var(--surface);max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:.86rem;line-height:1.55}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:var(--accent-soft);color:var(--fg);font-weight:700;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td.n,th.n{font-variant-numeric:tabular-nums}
+table.wide{min-width:1500px}
+table.mid{min-width:700px}
+table.sm{min-width:520px}
+.src{font-size:.8rem;color:var(--muted)}
+.src a{color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:10px 0;font-size:.85rem}
+.legend span{min-width:0}
+figure{margin:16px 0}
+figcaption{font-size:.85rem;color:var(--muted);margin-top:6px;max-width:720px}
+svg{display:block;min-width:600px;width:100%;height:auto}
+svg text{font-family:inherit;fill:var(--fg);font-size:12px}
+svg .mut{fill:var(--muted)}
+svg .ax{stroke:var(--muted);stroke-width:1.2;fill:none}
+svg .grid{stroke:var(--line);stroke-width:1}
+svg .band{fill:var(--accent-soft)}
+svg .ref{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:5 4}
+svg .pt{fill:var(--accent);stroke:var(--surface);stroke-width:1.5}
+svg .reft{fill:var(--accent);font-weight:700}
+.ph{border:2px dashed var(--note-line);padding:14px;border-radius:3px;background:var(--note-bg);max-width:720px}
+code{font-size:.9em}
+</style>
+
+<div class="wrap">
+<header class="top"><h1>罠猟IoT 机上調査（フェーズ0）</h1>
+<p class="meta">作成日 2026-11-14 ／ 調査確認日はすべて 2026-11-14 ／ 判断材料の整理。推奨は書いていない</p></header>
+<div class="notice"><strong>数字はレビュー担当の照合前</strong>調査担当が原文を開いて確認したと報告したものをまとめた段階。判断の材料ではなく、聞き取りと窓口確認の準備に使う。</div>
+<div class="legend"><span><span class="pill p-ok">開いて確認</span> 原文を開いて確認</span><span><span class="pill p-sum">検索要約のみ</span> 検索の要約だけ。原文は未開封</span><span><span class="pill p-est">推定</span> 根拠と計算つきの推定</span><span><span class="pill p-unk">未確認</span> 見つからない／開けない</span></div>
+<p class="src">URLの出典は、各項目のリンクから開ける。研究ファイルの原文は research/01〜05。</p>
+<div class="scroll"><table class="mid"><thead><tr><th>#</th><th>テーマ</th><th>状態</th><th>研究ファイル</th></tr></thead><tbody><tr><td>A</td><td>既存の捕獲通知製品</td><td>原文を開いて再実行済み</td><td>research/01_competitors.md</td></tr><tr><td>B</td><td>代替手段</td><td>再実行済み。通販・ブログ・海外メーカーは開けていない</td><td>research/02_alternatives.md</td></tr><tr><td>C</td><td>利用者の不満と実証結果</td><td>再実行済み。栃木県の資料と個人の声は未確認</td><td>research/03_user_pain.md</td></tr><tr><td>D</td><td>法規と行政指導</td><td>再実行済み。小鹿野町の資料は開けていない</td><td>research/04_regulation.md</td></tr><tr><td>E</td><td>市場と補助金</td><td>再実行済み。小鹿野町の資料と猟友会は開けていない</td><td>research/05_market_subsidy.md</td></tr><tr><td>F</td><td>通信方式とコスト</td><td><span class="pill p-unk">未確認</span> 未検証。調査をやり直し中。1回目の検索要約のままで、数字は使えない</td><td>research/06_connectivity_cost.md</td></tr></tbody></table></div><section id="view"><h2><span class="no">2</span>今の見立て（Q1〜Q3）</h2>
+<h3>Q1. 誰が、いくらなら払うか：まだ答えられない</h3>
+<ul>
+<li>わな猟免許は全国119,500件（2021年度）。猟期に登録しているのは59,472人で約半分。埼玉県は免許1,702件に登録447人。<span class="pill p-ok">開いて確認</span>（出典は8章）</li>
+<li>見回りに困っていそうな層は、全国で約1.2万〜4.8万人、埼玉県で約90〜680人。<span class="pill p-est">推定</span> 「罠を掛ける割合」「見回りが負担な割合」に統計がなく、仮の値を置いたため幅が広い。</li>
+<li>団体ルート：交付金を申請できるのは協議会や市町村で、個人は直接申請できない。小鹿野町は鳥獣被害対策実施隊が未設置（令和7年4月末）。近隣の飯能市は令和7〜9年度のモデル地区。<span class="pill p-ok">開いて確認</span></li>
+<li>いくらなら払うか：<span class="pill p-unk">未確認</span> 聞き取りでしか分からない。</li>
+</ul>
+<h3>Q2. 既存製品で解決されていない不満は何か：「価格」より「通知を信用できるか」にありそう</h3>
+<p>これは推定 <span class="pill p-est">推定</span>。</p>
+<ul>
+<li>価格は、想定ほどの穴ではない。個人向けに価格を公開している製品が既にある。
+<ul><li>スマートトラップ：本体33,800円、月980円（税抜）。公式に「個人様を含め」と記載。<span class="pill p-ok">開いて確認</span></li>
+<li>アイホスエコ：42,000円、通信3年込みで月額なし。ただし購入ボタン位置に「Sold out」表示。通知は「朝6時と夜22時」とあり、即時ではなさそう。<span class="pill p-ok">開いて確認</span> 日本語の原文趣旨は未確認。</li></ul></li>
+<li>通知の信頼性には、公的な実証で問題が出ている。<span class="pill p-ok">開いて確認</span>
+<ul><li>静岡県の国有林（17日間、30基ずつ）：通知6件のうち誤報4件、作動3件のうち通知漏れ1件。「見回り94%減」はこの実証の数字（6章）。</li>
+<li>長野県の国有林（令和6年度）：誤作動が多く、通知があっても毎日見回りになった。</li>
+<li>静岡の実証（令和2年）：子機の故障で連日通知、中継器の停止で通知が届かない、経年劣化で不具合が年々増加。</li>
+<li>飯能市（令和7年度）：冬は電池寿命が極端に短くなる。</li></ul></li>
+<li>通信断（圏外・不達）に利用者が気づける仕組みを明記した資料は、どの製品にもなかった。<span class="pill p-unk">未確認</span> 「ない」と確認したのではなく、書かれていないだけ。</li>
+<li>空はじき仮説の根拠は弱〜中。課題と認める公的資料はあるが、頻度の数字はなかった。静岡で最多の誤報原因は空はじきではなく設置方法（紐の長さ）。空はじき判別を明記した製品はICTハンティング装置のみ。</li>
+<li>個人猟師の一次の声：<span class="pill p-unk">未確認</span> レビュー、SNS、ブログでは見つからなかった（開けないサイトが多い）。</li>
+</ul>
+<h3>Q3. 個人が払える価格で確実に解決できるか：まだ答えられない</h3>
+<ul>
+<li>調査Fが未検証なので、通信コストの数字は使えない（9章）。</li>
+<li>手がかり：SORACOM LTE-Mボタン8,118円、磁気センサー付きキット9,680円、SIM基本料月110円（税込）。部品としては安い。<span class="pill p-ok">開いて確認</span></li>
+<li>通信トレイルカメラは罠1基あたり初期約5万〜7万円。価格では直接の脅威になりにくそう。ただし電池・SDカード・金具は計算に入っておらず、一部のSIM月額は仮置き。<span class="pill p-est">推定</span></li>
+</ul></section>
+<section id="biggap"><h2><span class="no">3</span>一番大きな未確認事項：毎日の見回りと通知機器</h2>
+<div class="callout"><strong>埼玉県は「毎日わなを見回ること」を指導している。通知機器を使う場合の扱いは、どの資料にも書かれていない。</strong></div>
+<ul>
+<li>出どころ：<span class="pill p-ok">開いて確認</span>
+<ul><li>第3次埼玉県第二種特定鳥獣管理計画（ニホンジカ・イノシシ、令和4〜8年度）。錯誤捕獲の予防として、行政が「狩猟者や捕獲従事者に対し、毎日わなを見回ること…の指導を徹底する」。<a href="https://www.pref.saitama.lg.jp/documents/44899/3shikakeikaku202204.pdf" target="_blank" rel="noopener noreferrer">ニホンジカ版PDF</a> ／ <a href="https://www.pref.saitama.lg.jp/documents/44899/3inoshishikeikaku202204.pdf" target="_blank" rel="noopener noreferrer">イノシシ版PDF</a></li>
+<li>県が掲載する狩猟免許更新講習の資料（環境省作成、2023年4月）。「毎日の見回りの徹底」。<a href="https://www.pref.saitama.lg.jp/documents/234619/kousyuyousiryou6.pdf" target="_blank" rel="noopener noreferrer">資料(6)</a></li>
+<li>第13次鳥獣保護管理事業計画：許可条件に「見回りの実施方法等について付す」。<a href="https://www.pref.saitama.lg.jp/documents/137599/13jikeikaku202204.pdf" target="_blank" rel="noopener noreferrer">事業計画PDF</a></li></ul></li>
+<li>鳥獣保護管理法と施行規則の条文には「見回り」の語がない。<span class="pill p-ok">開いて確認</span> <a href="https://laws.e-gov.go.jp/law/414AC0000000088" target="_blank" rel="noopener noreferrer">法</a> ／ <a href="https://laws.e-gov.go.jp/law/414M60001000028" target="_blank" rel="noopener noreferrer">施行規則</a></li>
+<li>見回りの緩和を認めた県の通知は、開いた範囲では見つからなかった。<span class="pill p-unk">未確認</span></li>
+<li>静岡県は「ICTの有無にかかわらず、わなの見回りは原則毎日」と指導している。林野庁の資料に記載。この資料の「指導の背景」は筆者の推測で、県の公式文書ではない。<span class="pill p-ok">開いて確認</span> <a href="https://www.rinya.maff.go.jp/kanto/gizyutu/kouryuuhappyoukai/attach/pdf/20230331-134.pdf" target="_blank" rel="noopener noreferrer">林野庁PDF</a></li>
+<li>国の資料（環境省の検討会資料、案）は「毎日」ではなく「頻繁に」と書く。<span class="pill p-ok">開いて確認</span> <a href="https://www.env.go.jp/nature/choju/plan/plan1-r07/mat03-2.pdf" target="_blank" rel="noopener noreferrer">環境省PDF</a></li>
+<li>林野庁の資料（2026年3月）は、狩猟読本にカメラでの見回り手法が明記されていないと述べる。<span class="pill p-ok">開いて確認</span> <a href="https://www.rinya.maff.go.jp/chubu/gijyutu/siryousitu/attach/pdf/chubu02-55.pdf" target="_blank" rel="noopener noreferrer">林野庁PDF</a></li>
+<li>許可捕獲の許可証に付く条件の実文と、小鹿野町の運用：<span class="pill p-unk">未確認</span></li>
+</ul>
+<p>国の指針や県の計画は、通知機器で見回りを代替できるかに触れていない。ここは窓口と協力猟師に聞くまで判断できない（7章、10章）。</p></section>
+<section id="competitors"><h2><span class="no">4</span>既存製品の比較表</h2><p>横にスクロールできる。確認日はすべて 2026-11-14。</p><div class="scroll"><table class="wide"><thead><tr><th>製品</th><th>会社</th><th>通信方式・圏外</th><th>初期費用</th><th>月額</th><th>電池</th><th>個人が1台から買えるか</th><th>空はじき判別</th><th>電池・生存の通知</th><th>資料年月</th><th>確認状態</th><th>出典</th></tr></thead><tbody><tr><td>スマートトラップ</td><td>huntech</td><td>4G(docomo)。圏内前提</td><td>33,800円（税抜）</td><td>980円（税抜、通信込）</td><td>単3×4本・約3か月</td><td>公式サイトに「個人様を含め」。購入は問い合わせフォーム。1台から買えるかの明言なし</td><td>記載なし</td><td>電池残量をWeb監視。通信断の通知は記載なし</td><td class="n">2024-08</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://huntech.jp/product/" target="_blank" rel="noopener noreferrer">公式</a> <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-140.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-140</a></td></tr><tr><td>アイホスエコ</td><td>イノホイ販売</td><td>Sigfox。圏内のみ</td><td>42,000円（税込と推定）</td><td>0円（最大3年の通信込）</td><td>内蔵・使い切り・最大3年</td><td>個人向けと明記。「Sold out」表示で販売状況は要確認</td><td>記載なし</td><td>記載なし。通知は朝6時・夜22時と読める</td><td class="n">記載なし</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://inohoi.jp/products/ihoseco" target="_blank" rel="noopener noreferrer">イノホイ</a></td></tr><tr><td>ほかパト</td><td>アイエスイー</td><td>150MHz LPWA。親機・中継機</td><td>要問い合わせ</td><td>親機2,000円・子機0円（税別）</td><td>記載なし</td><td>自治体・猟友会が中心と読める。個人販売は未確認</td><td>記載なし</td><td>記載なし</td><td class="n">2024-04</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-115.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-115</a></td></tr><tr><td>マタギっ娘 ZETA版</td><td>マクセルフロンティア</td><td>ZETA。基地局が必須</td><td>基地局298,200円、検知BOX31,200円ほか（税抜）</td><td>500〜1,000円/台（対応づけ要確認）</td><td>単3×3本・約6か月</td><td>価格公開。購入経路は未確認</td><td>記載なし</td><td>記載なし</td><td class="n">2024-05</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-131.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-131</a></td></tr><tr><td>マタギっ娘 LTE-M版</td><td>マクセルフロンティア</td><td>LTE-M(au/ソフトバンク)。圏内前提</td><td>価格の記載なし</td><td>不要（約3,600頭分の通信込）</td><td>単3×3本・約1年</td><td>価格非公開</td><td>記載なし</td><td>記載なし</td><td class="n">2024-05</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-132.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-132</a></td></tr><tr><td>ICTハンティング装置</td><td>エナジーワイヤレス</td><td>920MHz LoRa。多段中継</td><td>要相談（seedの価格は原文で確認できず）</td><td>回線料なし（親機をネットに接続する場合）</td><td>記載なし</td><td>見積型。個人向けではないと読める（推定）</td><td>あり（磁気＋赤外線）。唯一の明記</td><td>記載なし</td><td class="n">記載なし</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-45.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-45</a></td></tr><tr><td>オリワナ</td><td>フォレストシー</td><td>独自LPWA。中継・メッシュ</td><td>未確認</td><td>未確認</td><td>未確認</td><td>未確認</td><td>記載なし</td><td>未確認</td><td class="n">記載なし</td><td><span class="pill p-unk">未確認</span> 詳細ページは未開封</td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/kikijouhou.html" target="_blank" rel="noopener noreferrer">農水省一覧</a></td></tr><tr><td>ワナの番人</td><td>マスプロ電工</td><td>LPWA（方式名は記載なし）。既存基地局を利用</td><td>55,000円（1年目、通信込、税別）</td><td>年6,000円（2年目〜、税別）</td><td>乾電池・2年</td><td>自治体導入。個人販売は未確認</td><td>記載なし</td><td>記載なし</td><td class="n">2026-02</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-167.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-167</a></td></tr><tr><td>わなベル</td><td>ジョイ・ワールド・パシフィック</td><td>LTE-M／Sigfox／LoRaWAN</td><td>69,400円（LoRaWAN版75,000円）（税抜）</td><td>年4,800円（LoRaWAN版はゲートウェイ用SIM月1,200円が別）</td><td>単4×2本・1シーズン</td><td>自治体中心。個人販売は未確認</td><td>記載なし</td><td>記載なし</td><td class="n">2024-05</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-130.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-130</a></td></tr><tr><td>Kagatta</td><td>イノホイ販売（コーワークス製）</td><td>docomo。圏内前提</td><td>33,000円（税込）</td><td>IoTプラン月440円〜上限1,320円（正式な料金表は未確認）</td><td>単3×6本・約3か月</td><td>「法人様・自治体様限定」。「Sold out」表示</td><td>記載なし</td><td>記載なし</td><td class="n">記載なし</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://inohoi.jp/products/kagatta" target="_blank" rel="noopener noreferrer">イノホイ</a></td></tr><tr><td>鳥獣わな監視装置Ⅱ</td><td>ALSOK</td><td>LPWA（「3G圏外対応」と記載。資料が古い可能性）</td><td>親機141,350円、子機54,650円（税抜）</td><td>親機年12,000円、子機年6,000円（税抜）</td><td>記載なし</td><td>自治体・法人向けと読める</td><td>記載なし</td><td>記載なし</td><td class="n">記載なし</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-55.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-55</a></td></tr><tr><td>有害鳥獣捕獲センサー</td><td>電信</td><td>LTE-M／NB-IoT。圏内前提</td><td>39,800円（カメラ版69,800円）（税抜）</td><td>通信月300円＋クラウド月4,980円（税抜。クラウドが台数依存かは未確認）</td><td>単3×4本・約1年</td><td>自治体導入。個人販売は未確認</td><td>記載なし</td><td>電波・電池状況を定期送信。通信断の通知は記載なし</td><td class="n">2024-01</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-107.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-107</a> <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-108.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-108</a></td></tr><tr><td>メールでハンターワイド</td><td>エフ・アンド・オー・システムズ／オールアシスト</td><td>SMS＋LoRa（親子型）</td><td>単独51,400円。親子型は親65,500円・子33,500円（税別）</td><td>年13,000〜14,000円（税別）</td><td>4〜12か月</td><td>未確認</td><td>記載なし</td><td>電池低下をメール送信</td><td class="n">記載なし</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-63.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-63</a></td></tr><tr><td>狩猟罠用発信機</td><td>ナテック</td><td>142MHz帯の無線（音）。回線不要</td><td>発信機24,200〜29,700円＋専用受信機100,000円（税抜）</td><td>0円</td><td>記載なし（電池残量警告2段階）</td><td>導入先に個人を記載。購入経路は未確認</td><td>記載なし</td><td>電池残量警告</td><td class="n">2025-11</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-156.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-156</a></td></tr></tbody></table></div><p>税表記は元の資料のまま（税抜・税込・税別が混在）。「記載なし」は「ない」の確認ではなく、資料に書かれていないという意味。</p>
+<p>seedの数字からの訂正：ワナの番人の電池は、農水省PDF（令和8年2月）で2年。「約5年」は二次情報で食い違うためPDFを採った。ICTハンティング装置のseed価格（5.8万円など）は原文が見つからず未確認。</p>
+<p>この表のほか、キャッチdeめ〜る LTE（イノホイ、69,000円、au LTE-M）、SORACOM LTE-M Button Plus、TRELink、リモワーナ（<span class="pill p-sum">検索要約のみ</span>）があるが、価格や個人購入の可否が不十分なため省いた。</p>
+<div class="callout">価格帯は4つ。携帯回線の単体型、通信込みの買い切り型、独自LPWAの基地局型、自治体向けの高額型。目安（初期2万円台・月額500円前後）に近い既存品が、個人向けに複数ある。<span class="pill p-ok">開いて確認</span></div><p>メーカーに聞かないと分からない共通項目：生存確認と通信断の通知、再送、空はじき判別の有無、個人販売の可否と現行価格、実測の電池寿命、圏外での不達率。</p></section>
+<section id="alternatives"><h2><span class="no">5</span>代替手段と罠1基あたりの費用</h2>
+<h3>5-1. 専用品以外の手段</h3>
+<div class="scroll"><table class="mid"><thead><tr><th>手段</th><th>初期費用</th><th>月額</th><th>注意点</th><th>状態</th><th>出典</th></tr></thead><tbody><tr><td>アイホスエコ</td><td>42,000円（税込）</td><td>0円（最大3年）</td><td>通知は朝6時・夜22時と読める。技適の記載とSigfoxの小鹿野町での圏内は未確認</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://inohoi.jp/products/ihoseco" target="_blank" rel="noopener noreferrer">イノホイ</a></td></tr><tr><td>142MHz発信機（まつだ屋特製）</td><td>23,636円（税込）。受信機は別</td><td>0円</td><td>携帯網を使わず、受信機の電波範囲内（100m以上〜数百m）で音が鳴る方式で、遠隔通知ではない。通知が常に確実とは保証できないとの注意書きあり。受信機例のYAESU FT-65は17,800円で、受信のみの免許要否は未確認</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://inohoi.jp/products/goods-013" target="_blank" rel="noopener noreferrer">イノホイ</a></td></tr><tr><td>ナテック発信機</td><td>24,200〜29,700円（税抜）＋受信機100,000円</td><td>0円</td><td>技術基準適合証明（ARIB STD-T99）取得。免許不要</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-156.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-156</a></td></tr><tr><td>SORACOM LTE-M Button Plus＋磁気センサー（キット）</td><td>9,680円（キット）。ボタン単体8,118円（税込）</td><td>SIM基本料110円（税込）＋通信は1送信0.3〜0.4円</td><td>防水筐体と取付は別。農水省の機器情報は箱わなと記載。くくり罠での動作、山間部の圏内（B26のみ対応）は未確認</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://soracom.jp/store/5207/" target="_blank" rel="noopener noreferrer">ソラコムストア</a> <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-68.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-68</a></td></tr><tr><td>海外の罠通知製品（Skyhawk、TrapSmartほか）</td><td>価格未確認</td><td>未確認</td><td>日本の技適・対応バンドはどれも未確認</td><td><span class="pill p-sum">検索要約のみ</span></td><td><a href="https://livetrap.com/skyhawk-kiwi-remote-trap-monitoring-system.html" target="_blank" rel="noopener noreferrer">livetrap.com</a></td></tr><tr><td>日本語の個人による自作事例</td><td>－</td><td>－</td><td>3件見つからなかった（0件）。Qiita、note、YouTube、BOOTHは開けていない。調べ切れてはいない</td><td><span class="pill p-unk">未確認</span></td><td>検索語は research/02</td></tr><tr><td>Amazon・楽天の汎用品</td><td>－</td><td>－</td><td>見つからなかった（検索のみ。通販サイトは開けていない）</td><td><span class="pill p-unk">未確認</span></td><td>－</td></tr></tbody></table></div>
+<h3>5-2. 通信トレイルカメラを罠の監視に使う場合（罠1基あたり）</h3>
+<p><span class="pill p-est">推定</span> 前提：罠1基にカメラ1台とSIM1回線。電池・SDカード・取付金具・雨よけ・防盗対策は価格が取れず含めていない（実際はこれ以上かかる）。TRELのSIM月額は「数百円/月」の記載から500円と仮置きで、根拠は弱い。</p>
+<div class="scroll"><table class="mid"><thead><tr><th>通信トレイルカメラ</th><th>初期費用/基</th><th>月額/基</th><th>1年の総額</th><th>3年の総額</th><th>備考</th></tr></thead><tbody><tr><td>TREL 4G-H（イノホイ価格）</td><td class="n">69,455円</td><td class="n">500円（仮置き）</td><td class="n">75,455円</td><td class="n">87,455円</td><td>SIMは別契約。電池寿命・圏外時の挙動は資料に記載なし</td></tr><tr><td>TREL 4G-H（農水省カタログ価格）</td><td class="n">49,800円</td><td class="n">500円（仮置き）</td><td class="n">55,800円</td><td class="n">67,800円</td><td>イノホイ価格との差の理由は未確認</td></tr><tr><td>MC1（プリペイドSIM、イノホイ価格）</td><td class="n">49,800円（SIM180日込み）</td><td class="n">約880円（5,280円÷6か月）</td><td class="n">55,080円</td><td class="n">76,200円</td><td>ソーラー給電</td></tr><tr><td>MC1（月払いSIM、AZxカタログ）</td><td class="n">49,500円（税込）</td><td class="n">1,320円</td><td class="n">約65,300円</td><td class="n">約97,000円</td><td>カタログは令和6年11月</td></tr><tr><td>あいわなクラウド</td><td class="n">158,000円＋初回設定30,000円</td><td class="n">30,000円</td><td class="n">約548,000円</td><td class="n">約1,268,000円</td><td>令和8年10月。個人向けの価格帯ではない</td></tr></tbody></table></div>
+<ul>
+<li>初期費用は最も安いケースでも約5.0万円で、目安（2万円台）の約2倍。TRELのイノホイ価格では約7.0万円（約3倍）。月額は、TRELは目安と同水準、MC1は880〜1,320円。<span class="pill p-est">推定</span></li>
+<li>カメラは「作動した罠」ではなく「カメラの前に動物がいたか」を知らせる。くくり罠の作動検知の代わりにするには、掛かった動物が画角に入る位置に置く必要がありそう。<span class="pill p-est">推定</span></li>
+<li>国有林の実例：南信森林管理署が令和7年度から、通信カメラでくくり罠を遠隔見守りしている。参加者の声は「勤め人が多いので現地に行く手間が省ける」。課題は「バッテリーの持ち」。<span class="pill p-ok">開いて確認</span> <a href="https://www.rinya.maff.go.jp/chubu/koho/koho_si/kakutitayori/attach/pdf/nansin-080902-1.pdf" target="_blank" rel="noopener noreferrer">林野庁広報</a>（年号は本文に明記なく、ファイル名から令和8年と読んだ<span class="pill p-est">推定</span>）</li>
+<li>出典：<a href="https://inohoi.jp/products/trel-camera-4g-h" target="_blank" rel="noopener noreferrer">TREL 4G-H</a> ／ <a href="https://inohoi.jp/products/mc1_camera" target="_blank" rel="noopener noreferrer">MC1</a> ／ <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-172.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-172</a> ／ <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-135.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-135</a> ／ <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/kikijouhou/attach/pdf/kikijouhou-173.pdf" target="_blank" rel="noopener noreferrer">農水省PDF-173</a></li>
+</ul>
+<h3>5-3. 図：初期費用と月額の位置</h3><div class="scroll"><svg viewBox="0 0 640 345" role="img" aria-labelledby="ct cd">
+<title id="ct">初期費用と月額の散布図</title><desc id="cd">横軸は初期費用0〜8万円、縦軸は月額0〜1,400円。目安は初期2万円台、月額500円前後。</desc>
+<line class="grid" x1="70.0" y1="40" x2="70.0" y2="300"/><text class="mut" x="70.0" y="320" text-anchor="middle">0万</text><line class="grid" x1="137.5" y1="40" x2="137.5" y2="300"/><text class="mut" x="137.5" y="320" text-anchor="middle">1万</text><line class="grid" x1="205.0" y1="40" x2="205.0" y2="300"/><text class="mut" x="205.0" y="320" text-anchor="middle">2万</text><line class="grid" x1="272.5" y1="40" x2="272.5" y2="300"/><text class="mut" x="272.5" y="320" text-anchor="middle">3万</text><line class="grid" x1="340.0" y1="40" x2="340.0" y2="300"/><text class="mut" x="340.0" y="320" text-anchor="middle">4万</text><line class="grid" x1="407.5" y1="40" x2="407.5" y2="300"/><text class="mut" x="407.5" y="320" text-anchor="middle">5万</text><line class="grid" x1="475.0" y1="40" x2="475.0" y2="300"/><text class="mut" x="475.0" y="320" text-anchor="middle">6万</text><line class="grid" x1="542.5" y1="40" x2="542.5" y2="300"/><text class="mut" x="542.5" y="320" text-anchor="middle">7万</text><line class="grid" x1="610.0" y1="40" x2="610.0" y2="300"/><text class="mut" x="610.0" y="320" text-anchor="middle">8万</text><line class="grid" x1="70" y1="300.0" x2="610" y2="300.0"/><text class="mut" x="62" y="304.0" text-anchor="end">0</text><line class="grid" x1="70" y1="262.9" x2="610" y2="262.9"/><text class="mut" x="62" y="266.9" text-anchor="end">200</text><line class="grid" x1="70" y1="225.7" x2="610" y2="225.7"/><text class="mut" x="62" y="229.7" text-anchor="end">400</text><line class="grid" x1="70" y1="188.6" x2="610" y2="188.6"/><text class="mut" x="62" y="192.6" text-anchor="end">600</text><line class="grid" x1="70" y1="151.4" x2="610" y2="151.4"/><text class="mut" x="62" y="155.4" text-anchor="end">800</text><line class="grid" x1="70" y1="114.3" x2="610" y2="114.3"/><text class="mut" x="62" y="118.3" text-anchor="end">1,000</text><line class="grid" x1="70" y1="77.1" x2="610" y2="77.1"/><text class="mut" x="62" y="81.1" text-anchor="end">1,200</text><line class="grid" x1="70" y1="40.0" x2="610" y2="40.0"/><text class="mut" x="62" y="44.0" text-anchor="end">1,400</text>
+<rect class="band" x="205.0" y="40" width="67.5" height="260" opacity=".75"/>
+<line class="ref" x1="70" y1="207.1" x2="610" y2="207.1"/>
+<text class="reft" x="208.0" y="52">目安 初期2万円台</text>
+<line class="ax" x1="70" y1="300" x2="610" y2="300"/><line class="ax" x1="70" y1="40" x2="70" y2="300"/>
+<circle class="pt" cx="298.1" cy="118.0" r="5"/><text x="307.1" y="122.0">スマートトラップ</text><circle class="pt" cx="353.5" cy="300.0" r="5"/><text x="347.5" y="290.0" text-anchor="end">アイホスエコ（月額0。3年換算は約1,170円）</text><circle class="pt" cx="441.2" cy="207.1" r="5"/><text x="450.2" y="201.1">ワナの番人（2年目〜）</text><circle class="pt" cx="538.5" cy="225.7" r="5"/><text x="538.5" y="245.7" text-anchor="middle">わなベル</text><circle class="pt" cx="404.1" cy="54.9" r="5"/><text x="413.1" y="58.9">MC1（月払いSIM）</text><circle class="pt" cx="135.3" cy="279.6" r="5"/><text x="144.3" y="283.6">SORACOM キット（通信料別）</text>
+<text class="mut" x="340" y="338" text-anchor="middle">初期費用（円、1台）</text>
+<text class="mut" x="12" y="170" transform="rotate(-90 12 170)" text-anchor="middle">月額（円、1台）</text>
+<text class="reft" x="83.5" y="202.1">目安 月額500円前後（点線）</text>
+</svg></div>
+<figcaption>薄い緑の帯が目安の初期2万円台、点線が月額500円。同じスケールで置いた。載せたのは価格が確定している製品だけ。税抜・税込の混在はそのまま。アイホスエコは月額0円（通信3年込み）で、買い直しを含む月換算は約1,170円（42,000÷36、<span class="pill p-est">推定</span>）。ワナの番人は2年目以降の年6,000円を月500円で表示、1年目は通信込み。載せなかったもの：Kagatta（月額の構成が未確認）、電信（クラウド費が台数依存か未確認）、通信トレイルカメラ（SIM月額が仮置き）、マタギっ娘・ほかパト・ICT・オリワナ（価格未公開または未確認）、142MHz発信機（受信機の費用の分け方が前提次第）、あいわなクラウド（158,000円・月30,000円で図の範囲外）。</figcaption></section>
+<section id="pain"><h2><span class="no">6</span>利用者の不満と実証結果</h2>
+<p>声の主は、ほぼすべて国（林野庁の職員）。個人猟師の声は見つからなかった。</p>
+<div class="scroll"><table class="mid"><thead><tr><th>内容</th><th>声の主・年</th><th>状態</th><th>出典</th></tr></thead><tbody><tr><td>静岡県浜松市 瀬尻国有林。30基×17日。通知6件のうち実際の作動2件、誤報4件。通知なし492件のうち1件は作動（空はじき）で通知漏れ。精度（スレットスコア）29%。誤報4件中3件は、子機とわなを長い紐でつないだため紐が引かれて磁石が外れた</td><td>国の職員（天竜森林管理署）。令和2年2〜3月</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.rinya.maff.go.jp/j/gyoumu/gijutu/kenkyu_happyo/attach/pdf/R3_happyo-15.pdf" target="_blank" rel="noopener noreferrer">林野庁PDF</a></td></tr><tr><td>同じ機器の委託捕獲は、令和元年度は精度64%、3件では28〜69%とばらつく。機器の経年劣化で不具合が年々増加。子機の故障で連日通知。中継器の停止で通知が親機に届かない。報告者は「通知を100%信頼することはできない」と記載</td><td>同上。令和元〜2年</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.rinya.maff.go.jp/kanto/gizyutu/kouryuuhappyoukai/attach/pdf/20230331-134.pdf" target="_blank" rel="noopener noreferrer">林野庁PDF</a></td></tr><tr><td>長野県下諏訪町 東俣国有林。オリワナを設置したが「誤作動が多発したため、通知の有無に関わらず、毎日見回りを行わなければならなかった」。原因は、テグスに動物が引っ掛かる等と<strong>推測</strong>で、検証されていない</td><td>国の職員（南信森林管理署）。令和6年度の職員実行</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.rinya.maff.go.jp/chubu/gijyutu/siryousitu/attach/pdf/chubu02-55.pdf" target="_blank" rel="noopener noreferrer">林野庁PDF</a></td></tr><tr><td>愛知県設楽町 段戸国有林。従来型の課題は、3G圏内のみで使えることと、空はじきでも必ず通知が来て「無駄足見回り」になること。赤外線センサー＋LPWAで空はじき通知は減ったが、「風や草木で誤感知」「結露・浸水」「中継器の設置に労力」が出た。中継局を含め9基でカバー率は約30%。誤報率の数字は記載なし</td><td>国の職員（愛知森林管理事務所）。年は不明</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.rinya.maff.go.jp/chubu/gijyutu/siryousitu/attach/pdf/chubu01-161.pdf" target="_blank" rel="noopener noreferrer">林野庁PDF</a></td></tr><tr><td>機器表示が猟友会員に分かりにくく、ランプを赤→緑に改良。PCが苦手な人向けにメール設定を支援。「適切な指導が一番重要」</td><td>同上（観察した内容）</td><td><span class="pill p-ok">開いて確認</span></td><td>同上</td></tr><tr><td>飯能市（令和7年度）：ハイクカムは日陰では長期使用できない。冬は気温低下で電池寿命が極端に短くなる</td><td>協議会の報告。令和8年3月末の資料</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/hyousyou_zirei/attach/pdf/smart-48.pdf" target="_blank" rel="noopener noreferrer">農水省PDF</a></td></tr><tr><td>電池切れで見逃した実例、費用への不満</td><td>－</td><td><span class="pill p-unk">未確認</span> 開いた資料になし</td><td>見つからなかった</td></tr><tr><td>栃木県「3日に1回」見回り、通信環境が悪く捕獲できない期間</td><td>自治体</td><td><span class="pill p-unk">未確認</span> 県サイトが504で開けなかった</td><td><a href="https://www.pref.tochigi.lg.jp/d04/documents/20251216145549.pdf" target="_blank" rel="noopener noreferrer">https://www.pref.tochigi.lg.jp/d04/documents/20251216145549.pdf</a></td></tr><tr><td>好意的な評価：「見る前に結果が分かっているので心の準備ができ、気が楽になる」</td><td>国の職員（実証参加者）。令和2年</td><td><span class="pill p-ok">開いて確認</span></td><td>R3_happyo-15.pdf</td></tr><tr><td>埼玉県の事例資料（LPWAセンサー、アイ・サイナップ社）：捕獲検知したわなを優先確認でき、人的負担が軽減。数字・課題の記載なし。誰の評価か本文から読めない</td><td>不明</td><td><span class="pill p-ok">開いて確認</span></td><td><a href="https://www.pref.saitama.lg.jp/documents/213537/jirei_4.pdf" target="_blank" rel="noopener noreferrer">埼玉県PDF</a></td></tr><tr><td>山口県光市：メール通知で見回り回数が軽減したとの評価</td><td>使用者（自治体資料）</td><td><span class="pill p-sum">検索要約のみ</span></td><td><a href="https://www.pref.yamaguchi.lg.jp/uploaded/attachment/119285.pdf" target="_blank" rel="noopener noreferrer">https://www.pref.yamaguchi.lg.jp/uploaded/attachment/119285.pdf</a></td></tr></tbody></table></div>
+<h3>「見回り94%減」の中身</h3>
+<ul>
+<li>見回り総時間は56.8h→3.4h（94%減）で、原資料と一致した。<span class="pill p-ok">開いて確認</span> <a href="https://www.rinya.maff.go.jp/j/gyoumu/gijutu/kenkyu_happyo/attach/pdf/R3_happyo-15.pdf" target="_blank" rel="noopener noreferrer">林野庁PDF</a></li>
+<li>条件は極端：通知なしチームは30基を毎日見回り、給餌・手直しもした（17日、1回平均197分）。通知ありチームは通知があった日に通知されたわなだけ見て帰り、通知がないわなは見回りも給餌も手直しもしない（6日、1回平均34分）。</li>
+<li>しかも通知の精度は29%。原著者自身が「2〜3日に1回は全部見回る」ことを提案している。</li>
+<li>捕獲数は通知なし4頭、通知あり2頭。報告者は「捕獲数が少なく比較は無意味」と書く。</li>
+<li>計算のずれ：17日×197分＝55.8時間で、本文の56.8時間と1時間違う。本文の誤記の可能性があり、94%という結論はどちらでも変わらない。</li>
+<li>栃木県の「3日に1回」は未開封。検索要約では、見回り可能な日だけわなを作動可能にする遠隔制御装置を使う運用もあった。<span class="pill p-sum">検索要約のみ</span> 通知だけの効果かは確認できていない。</li>
+</ul>
+<h3>空はじき仮説</h3>
+<ul>
+<li>支持する材料：愛知の事務所が空はじき通知を課題に挙げた。磁石式は空はじきを検知しにくい。誤報で通知を信用できず毎日見回りに戻った例がある。<span class="pill p-ok">開いて確認</span></li>
+<li>弱める材料：静岡で最多の誤報は空はじきではなく設置方法（磁石の外れ）。赤外線方式にしても別の誤報（風、草木、結露）が出た。空はじきの頻度の数字は開いた資料にない。個人猟師が空はじきを理由にやめた声も見つからなかった。<span class="pill p-unk">未確認</span></li>
+<li>強さは弱〜中。聞き取りで頻度と通知を信用できたかを確かめる。</li>
+</ul></section>
+<section id="regulation"><h2><span class="no">7</span>法規と行政指導</h2>
+<h3>7-1. 分かったこと</h3>
+<ul>
+<li>見回りの出どころ：法令ではなく、県の計画、講習資料、許可条件（3章）。<span class="pill p-ok">開いて確認</span> 狩猟（猟期）の見回りは事業計画に記載が見つからず、講習資料の「毎日の見回り」のみ。許可捕獲は事業計画が許可条件に見回りを付すと書く。</li>
+<li>許可捕獲の特例（小型はこわな等で免許なしに許可を出せる条件）に「１日１回以上の見回りを実施する等」とある。<span class="pill p-ok">開いて確認</span> <a href="https://www.pref.saitama.lg.jp/documents/137599/13jikeikaku202204.pdf" target="_blank" rel="noopener noreferrer">第13次事業計画</a></li>
+<li>大日本猟友会『狩猟読本』は「見回りは最低でも１日１回」と明記と、林野庁資料にある（読本そのものは未開封の孫引き）。<span class="pill p-ok">開いて確認</span></li>
+<li>第14次事業計画の素案（令和9年度〜とみられる）は、取得時に404で本文を読めなかった。見回りやICTの扱いが変わるかは未確認。<span class="pill p-unk">未確認</span></li>
+<li>緩和した県：県の通知は見つからなかった。<span class="pill p-unk">未確認</span> 山口県光市の事例は「毎日の見回りをする必要がなくなり」とあるが、検索要約のみで県の指導の変更かは不明。<span class="pill p-sum">検索要約のみ</span></li>
+<li>法定要件：くくりわなの構造規制は施行規則第10条第3項第9号（輪の直径12cm超、締付け防止金具なし、よりもどしなし、ワイヤー径4mm未満の組み合わせ）。標識は法第62条第3項、規則第70条（許可捕獲は規則第7条）。<span class="pill p-ok">開いて確認</span> センサーがこれらに触れるかを扱った資料は見つからなかった。<span class="pill p-unk">未確認</span></li>
+<li>電波法：適合表示無線設備（技適品）を組み込んだ製品に同じ表示を付せるのは、法第38条の7第2項（「付することができる」の書き方）。表示のある設備の変更の工事をした者は、表示を除去する（同第4項）。<span class="pill p-ok">開いて確認</span> <a href="https://laws.e-gov.go.jp/law/325AC0000000131" target="_blank" rel="noopener noreferrer">電波法</a></li>
+<li>920MHz帯（20mW級）と一般の特定小電力には、省令に筐体・アンテナの条件がある。<span class="pill p-ok">開いて確認</span> <a href="https://laws.e-gov.go.jp/law/325M50080000018" target="_blank" rel="noopener noreferrer">無線設備規則</a> 送信時間の数値、429MHz帯の細則、販売時の届出の要否は未確認。<span class="pill p-unk">未確認</span></li>
+<li>県の講習資料に「わな等に設置する発信器は技適マークの付いた無線設備を使用する」とある。<span class="pill p-ok">開いて確認</span> <a href="https://www.pref.saitama.lg.jp/documents/234619/kousyuyousiryou2.pdf" target="_blank" rel="noopener noreferrer">資料(2)</a></li>
+<li>法の解釈は断定していない。</li>
+</ul>
+<h3>7-2. 窓口</h3>
+<p>名称と電話番号は選択してコピーできる。</p>
+<ul>
+<li>埼玉県 環境部みどり自然課 野生生物担当：048-830-3143（県の報道発表資料、2026-09-11付。<span class="pill p-ok">開いて確認</span>）</li>
+<li>秩父環境管理事務所（秩父地方庁舎内、小鹿野町を所管）：0494-23-1511（県の一覧PDFで確認。<span class="pill p-ok">開いて確認</span> <a href="https://www.pref.saitama.lg.jp/documents/240624/kankyokanrijimusyo_list.pdf" target="_blank" rel="noopener noreferrer">一覧PDF</a>）</li>
+<li>小鹿野町 農林振興課：0494-75-5061。町サイトのトップに掲載（research/05）。一方、調査Dでは検索要約のみで未確認の扱い。使う前に町の公式サイトで確かめる。</li>
+</ul>
+<h3>7-3. 聞くこと（全文は research/04_regulation.md の3章）</h3>
+<ul>
+<li>県・秩父事務所：「毎日わなを見回ること」の指導は通知機器を使う場合にも適用されるか。猟期の見回り頻度の根拠はどの文書か。許可証の条件の実文と、通知機器を伝えた場合の扱い。第14次計画の素案の掲載場所。通知機器を前提に見回り頻度を認めた県内の例。</li>
+<li>小鹿野町：鳥獣被害防止計画と許可基準の閲覧方法。許可捕獲での見回りの条件。町内の通知機器の利用例と見回り頻度。</li>
+<li>協力猟師：猟期と許可捕獲それぞれで、行政や猟友会から見回りについて実際に何と言われているか。許可証の条件の写真。輪の直径、よりもどし、締付け防止金具、標識の付け方と、センサーの取り付け場所。</li>
+<li>環境省または県：センサーと小型筐体の取り付けが、構造規制や許可基準に抵触するか。標識がセンサー筐体にも要るか。</li>
+<li>電波の窓口：認証済みモジュールのアンテナ変更の可否、完成品の表示、販売時の届出、920MHz帯の送信時間制限。</li>
+</ul></section>
+<section id="market"><h2><span class="no">8</span>市場と補助金</h2>
+<h3>8-1. 免許と登録者数</h3>
+<p>全国のわな猟免許（件）。単位は件、環境省は十の位を四捨五入。最新は2021年度（それ以降は公開されていない）。<span class="pill p-ok">開いて確認</span> <a href="https://www.env.go.jp/nature/choju/docs/docs4/syubetu.pdf" target="_blank" rel="noopener noreferrer">環境省PDF</a></p>
+<div class="scroll"><table class="sm"><thead><tr><th>年度</th><th>わな</th><th>網</th><th>第一種銃猟</th><th>第二種銃猟</th><th>合計</th></tr></thead><tbody><tr><td class="n">2007</td><td class="n">51,600</td><td class="n">38,700</td><td class="n">136,000</td><td class="n">2,600</td><td class="n">228,900</td></tr><tr><td class="n">2011</td><td class="n">72,900</td><td class="n">7,300</td><td class="n">116,100</td><td class="n">2,100</td><td class="n">198,400</td></tr><tr><td class="n">2016</td><td class="n">98,800</td><td class="n">6,900</td><td class="n">88,900</td><td class="n">1,900</td><td class="n">196,500</td></tr><tr><td class="n">2019</td><td class="n">115,600</td><td class="n">7,800</td><td class="n">90,000</td><td class="n">2,000</td><td class="n">215,400</td></tr><tr><td class="n">2020</td><td class="n">118,900</td><td class="n">7,500</td><td class="n">90,000</td><td class="n">2,000</td><td class="n">218,500</td></tr><tr><td class="n">2021</td><td class="n">119,500</td><td class="n">7,600</td><td class="n">84,400</td><td class="n">1,900</td><td class="n">213,400</td></tr></tbody></table></div>
+<ul>
+<li>猟期の狩猟者登録（令和3年度）：全国のわな59,472人（免許の49.8%）。埼玉県のわな447人（免許1,702件の26.3%）。比率は調査担当の計算。<span class="pill p-ok">開いて確認</span> <a href="https://www.env.go.jp/nature/choju/docs/docs2/r03/R3-11.xlsx" target="_blank" rel="noopener noreferrer">R3-11</a></li>
+<li>60歳以上は、全国で全種別の55.8%（119,100人／213,400人）。<a href="https://www.env.go.jp/nature/choju/docs/docs4/nenreibetu.pdf" target="_blank" rel="noopener noreferrer">年代別PDF</a> 埼玉県は50.2%（2,466／4,917件、令和3年度）。<a href="https://www.env.go.jp/nature/choju/docs/docs2/r03/R3-03.xlsx" target="_blank" rel="noopener noreferrer">R3-03</a> わな猟だけの年齢別表は見つからなかった。</li>
+<li>埼玉県のわな登録447のうち329は「許可捕獲者の従事者」と読める（約74%）。ただし表の列の対応は推定で、確度は中。<span class="pill p-est">推定</span> <a href="https://www.env.go.jp/nature/choju/docs/docs2/r03/R3-04.xlsx" target="_blank" rel="noopener noreferrer">R3-04</a></li>
+<li>秩父地域・小鹿野町の免許所持者数・登録者数、猟友会の会員数：<span class="pill p-unk">未確認</span> 環境省統計は都道府県単位まで。</li>
+<li>大日本猟友会の会員数：2020年104千人（銃64千、わな・あみ38千）。1990年は220千人。<span class="pill p-ok">開いて確認</span> <a href="https://www.env.go.jp/council/12nature/12_%EF%BC%88%E4%B8%80%E7%A4%BE%EF%BC%89%E5%A4%A7%E6%97%A5%E6%9C%AC%E7%8C%9F%E5%8F%8B%E4%BC%9A%E6%8F%90%E5%87%BA%E8%B3%87%E6%96%99.pdf" target="_blank" rel="noopener noreferrer">環境省資料</a></li>
+</ul>
+<h3>8-2. 見回りに困っていそうな層の推定</h3>
+<p><span class="pill p-est">推定</span> 計算式：人数＝A×B×C。Aは全国119,500件、埼玉県1,702件（環境省、2021年度）。Bの低位は登録比で、80%と65%は根拠のない仮置き。Cの20・35・50%も根拠のない仮置き。支払い意思は含まない。</p>
+<div class="scroll"><table class="mid"><thead><tr><th>ケース</th><th>B 罠を掛ける割合</th><th>C 見回りが負担な割合</th><th>全国</th><th>埼玉県</th></tr></thead><tbody><tr><td>少なめ</td><td>登録比（全国49.8%、埼玉26.3%）</td><td>20%</td><td class="n">約11,900人（59,472×0.20）</td><td class="n">約90人（447×0.20）</td></tr><tr><td>中位</td><td>65%</td><td>35%</td><td class="n">約27,200人</td><td class="n">約390人</td></tr><tr><td>多め</td><td>80%</td><td>50%</td><td class="n">約47,800人</td><td class="n">約680人</td></tr></tbody></table></div>
+<p>全国で約1.2万〜4.8万人、埼玉県で約90〜680人。一番効くのはCで、聞き取りでしか埋まらない。小鹿野町・秩父地域は数が見つからず推定していない。</p>
+<h3>8-3. 交付金と団体ルート</h3>
+<ul>
+<li>鳥獣被害防止総合対策交付金：令和8年度予算9,900百万円。<span class="pill p-ok">開いて確認</span> <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/attach/pdf/index-427.pdf" target="_blank" rel="noopener noreferrer">事業概要</a></li>
+<li>申請主体は協議会、その構成員（市町村等）など。個人は含まれない。被害防止計画に基づく取組が対象。<span class="pill p-ok">開いて確認</span> <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/yosan/attach/pdf/yosan-211.pdf" target="_blank" rel="noopener noreferrer">実施要領</a></li>
+<li>ICT関連：ICT等新技術実証は定額で1市町村100万円以内。ICT等新技術の活用は200万円以内/市町村。スマート捕獲等普及加速化事業は都道府県主導で2年以内、捕獲通知機器を使うモデル地区を整備。<span class="pill p-ok">開いて確認</span> <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/yosan/attach/pdf/yosan-229.pdf" target="_blank" rel="noopener noreferrer">支援内容(令和8年4月改訂)</a></li>
+<li>ICT機器の通信費が対象になるのは導入年度の事業実施期間中。継続的な月額通信費は対象外とみられる（実施要領の経費欄の読みで、解釈は調査担当）。<span class="pill p-est">推定</span> 機器の型式要件の記載は見つからなかった。</li>
+<li>捕獲機材の導入：補助率1/2以内。くくりわな16千円/基など。捕獲報奨金の上限単価はイノシシ・シカ（成獣）で7〜9千円/頭。<span class="pill p-ok">開いて確認</span> yosan-229</li>
+<li>埼玉県の令和8年度配分は33,129千円で、47都道府県中少ない方から4番目。<span class="pill p-ok">開いて確認</span> <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/yosan/attach/pdf/yosan-237.pdf" target="_blank" rel="noopener noreferrer">配分額</a></li>
+<li>被害防止計画の市町村数（令和7年4月末）：全国1,525、実施隊設置1,266、隊員42,950人。ICT利用中は685市町村。埼玉県は63市町村中、計画作成32、実施隊設置3（飯能市、毛呂山町、鳩山町）。小鹿野町は計画あり、実施隊の欄は空欄（未設置と読める）。<span class="pill p-ok">開いて確認</span> <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/keikaku_zisshitai/attach/pdf/index-95.pdf" target="_blank" rel="noopener noreferrer">調査結果概要</a> ／ <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/keikaku_zisshitai/attach/pdf/index-94.pdf" target="_blank" rel="noopener noreferrer">市町村一覧</a></li>
+<li>近隣の例：飯能市鳥獣害対策協議会が令和7〜9年度のスマート捕獲等普及加速化事業。ハイクカムLt+lot 30台、MC1+ 5台ほどを導入。<span class="pill p-ok">開いて確認</span> <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/hyousyou_zirei/attach/pdf/smart-48.pdf" target="_blank" rel="noopener noreferrer">モデル地区概要</a></li>
+<li>秩父地域鳥獣害対策協議会（秩父市、横瀬町、皆野町、長瀞町、小鹿野町と猟友会など23組織）。平成29年度にICTの囲い罠をスマホで遠隔操作する実証。資料は古く、現状は未確認。<span class="pill p-ok">開いて確認</span> <a href="https://www.maff.go.jp/j/seisan/tyozyu/higai/hyousyou_zirei/yuuryou_jirei/47kamisibai/attach/pdf/47zirei-49.pdf" target="_blank" rel="noopener noreferrer">農水省PDF</a></li>
+<li>埼玉県農業技術研究センターの実証（令和4年度）：「わな管理のすべてを監視センサーに置き換えることはできないが、毎日のわな点検を補完することは可能」。<span class="pill p-ok">開いて確認</span> <a href="https://www.pref.saitama.lg.jp/documents/117248/2022gyoumuhoukoku.pdf" target="_blank" rel="noopener noreferrer">業務報告</a></li>
+</ul>
+<h3>8-4. 個人が使える補助</h3>
+<ul>
+<li>個人が直接受け取れる機器購入補助は、国の交付金にない。埼玉県、小鹿野町でも見つからなかった。<span class="pill p-unk">未確認</span></li>
+<li>埼玉県の狩猟税の軽減（わな猟免許は8,200円または5,500円。被害防止の許可捕獲を行った者は半額）は補助金ではなく税の軽減。<span class="pill p-ok">開いて確認</span> <a href="https://www.pref.saitama.lg.jp/a0209/z-kurashiindex/z-2-15.html" target="_blank" rel="noopener noreferrer">県ページ</a></li>
+<li>小鹿野町の狩猟免許取得補助は検索要約のみ、金額不明。<span class="pill p-sum">検索要約のみ</span> 小鹿野町の捕獲報奨金の額、町の被害防止計画の本文：<span class="pill p-unk">未確認</span> 町サイトが停止中で開けなかった。</li>
+</ul></section>
+<section id="connectivity"><h2><span class="no">9</span>通信方式とコスト</h2><div class="ph"><p><strong>調査をやり直し中</strong></p><p>調査Fは1回目の検索要約のままで、数字を使える状態にない。ここは、あとで中身を追加する。</p></div></section>
+<section id="next"><h2><span class="no">10</span>次に確かめること</h2>
+<h3>オーナーがやること</h3>
+<ol>
+<li>窓口と協力猟師に確認する。質問文は research/04_regulation.md の3章。最優先は「毎日の見回り」の指導が通知機器にも及ぶか。窓口：みどり自然課 048-830-3143、秩父環境管理事務所 0494-23-1511。</li>
+<li>聞き取りをする（3人程度）。いくらなら払うか、空はじきの頻度、通知を信用できたか、猟場の電波、見回りについて何と言われているか。</li>
+<li>調査Fのやり直しの結果を待つ。</li>
+</ol>
+<h3>PMがやること</h3>
+<ol>
+<li>調査Fのやり直しと、この章への追記。</li>
+<li>opus-reviewer による数字と出典の照合。新しいセッションで行う。</li>
+<li>照合のあと、既製品の購入見積もりを出す。今の候補はスマートトラップ1台で、本体と3か月分の利用料を合わせて税込約4万円（<span class="pill p-est">推定</span> 送料、最低契約期間、電池は未確認）。</li>
+<li>聞き取りと窓口の結果を入れて、推奨を判断する。</li>
+</ol>
+<h3>メーカーに聞く必要がある項目（まとめ）</h3>
+<ul><li>生存確認と通信断の通知、再送の有無。空はじき判別の有無。個人販売の可否と現行価格。実測の電池寿命。圏外での不達率。アイホスエコの通知が定時配信かどうか、Kagattaの「Sold out」の意味。</li></ul></section>
+</div>
