@@ -1,0 +1,342 @@
+<title>罠通知モック</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  :root {
+    --bg: #eef1ec;
+    --fg: #1c2620;
+    --muted: #55625a;
+    --surface: #fafbf8;
+    --surface-2: #e2e8df;
+    --line: #b9c4b9;
+    --accent: #1b6a66;
+    --accent-fg: #ffffff;
+    --accent-soft: #d3e7e4;
+    --ok: #25662c;
+    --ok-bg: #dcefdc;
+    --alert: #a8231a;
+    --alert-bg: #fbdcd6;
+    --unk: #7a4d00;
+    --unk-bg: #f6e6bd;
+    --focus: #0b57d0;
+    --shadow: 0 1px 0 rgba(28, 38, 32, 0.12);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151b17;
+      --fg: #e4eae4;
+      --muted: #9fada3;
+      --surface: #1e2621;
+      --surface-2: #29332d;
+      --line: #46544a;
+      --accent: #5cc2ba;
+      --accent-fg: #0b1f1d;
+      --accent-soft: #1d3b38;
+      --ok: #8fd49a;
+      --ok-bg: #1f3a24;
+      --alert: #ff9f92;
+      --alert-bg: #4a1e19;
+      --unk: #f0c565;
+      --unk-bg: #45360f;
+      --focus: #8ab4ff;
+      --shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151b17;
+    --fg: #e4eae4;
+    --muted: #9fada3;
+    --surface: #1e2621;
+    --surface-2: #29332d;
+    --line: #46544a;
+    --accent: #5cc2ba;
+    --accent-fg: #0b1f1d;
+    --accent-soft: #1d3b38;
+    --ok: #8fd49a;
+    --ok-bg: #1f3a24;
+    --alert: #ff9f92;
+    --alert-bg: #4a1e19;
+    --unk: #f0c565;
+    --unk-bg: #45360f;
+    --focus: #8ab4ff;
+    --shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-block: 20px 48px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 18px; margin: 0 0 12px; }
+  h3 { font-size: 14px; margin: 20px 0 8px; color: var(--muted); letter-spacing: 0.04em; }
+  p { margin: 0 0 8px; }
+  .lead { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+
+  .cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  @media (min-width: 900px) {
+    .cols { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
+  }
+  .panel { min-width: 0; padding: 16px; }
+  .panel.hunter { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+  .panel.sim { background: var(--surface-2); border: 2px dashed var(--line); border-radius: 4px; }
+  .tag-line { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+
+  .summary { background: var(--accent-soft); border-left: 6px solid var(--accent); padding: 12px 14px; border-radius: 4px; }
+  .summary .big { font-size: 17px; font-weight: 700; margin: 0; }
+  .summary .go-list { margin: 6px 0 0; font-size: 14px; }
+  .clock { margin: 10px 0 0; font-size: 14px; color: var(--muted); }
+  .clock strong { color: var(--fg); font-size: 16px; }
+
+  ul.plain { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .trap { border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; background: var(--bg); min-width: 0; }
+  .trap.s-fired { border-left: 8px solid var(--alert); }
+  .trap.s-unknown { border-left: 8px dashed var(--unk); }
+  .trap.s-ok { border-left: 3px solid var(--ok); }
+  .trap-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; justify-content: space-between; }
+  .trap-name { font-weight: 700; min-width: 0; }
+  .trap-type { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 6px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 4px; font-size: 13px; font-weight: 700; border: 1px solid currentColor; }
+  .badge.fired { color: var(--alert); background: var(--alert-bg); border-width: 2px; }
+  .badge.unknown { color: var(--unk); background: var(--unk-bg); border-style: dashed; border-width: 2px; }
+  .badge.ok { color: var(--ok); background: var(--ok-bg); }
+  .badge.low { color: var(--unk); background: var(--unk-bg); }
+  .badge.late { color: var(--fg); background: var(--surface-2); border-style: dashed; }
+  .shape { width: 12px; height: 12px; background: currentColor; display: inline-block; flex: none; }
+  .shape.fired { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .shape.unknown { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  .shape.ok { border-radius: 50%; }
+  .trap-meta { display: flex; flex-wrap: wrap; gap: 2px 16px; margin-top: 6px; font-size: 13px; color: var(--muted); }
+  .trap-meta span { min-width: 0; }
+  .reason { font-size: 13px; margin-top: 4px; }
+
+  .note { border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; background: var(--bg); }
+  .note-head { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; font-weight: 700; }
+  .note-times { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+
+  .sim-trap { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; min-width: 0; }
+  .sim-state { font-size: 13px; color: var(--muted); margin: 2px 0 8px; display: flex; flex-wrap: wrap; gap: 2px 14px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; }
+  button {
+    font: inherit; font-size: 14px; min-height: 40px; padding: 6px 12px;
+    background: var(--surface); color: var(--fg); border: 1px solid var(--fg); border-radius: 4px; cursor: pointer;
+  }
+  button:hover { background: var(--accent-soft); }
+  button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  button.danger { border-style: dashed; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+  .about { margin-top: 24px; padding: 16px; border-top: 3px solid var(--accent); background: var(--surface); border-radius: 0 0 4px 4px; }
+  .about dl { margin: 0; display: grid; gap: 10px; }
+  .about dt { font-weight: 700; }
+  .about dd { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+  .about dd b { color: var(--fg); }
+</style>
+
+<div class="wrap">
+  <h1>罠通知モック</h1>
+  <p class="lead">センサー側とサーバー側をブラウザの中でシミュレートしています。罠の名前と状態はすべて例示データです。</p>
+
+  <div class="cols">
+    <section class="panel hunter" aria-labelledby="h-hunter">
+      <h2 id="h-hunter">猟師の画面</h2>
+      <div class="tag-line">例示データ（実在の罠ではありません）</div>
+
+      <div class="summary" id="summary" role="status" aria-live="polite"></div>
+      <p class="clock">現在時刻（シミュレート）：<strong id="clock"></strong></p>
+
+      <h3>罠の一覧</h3>
+      <ul class="plain" id="trap-list"></ul>
+
+      <h3>通知の履歴（新しい順）</h3>
+      <ul class="plain" id="notif-list"></ul>
+    </section>
+
+    <section class="panel sim" aria-labelledby="h-sim">
+      <h2 id="h-sim">現場のシミュレーター</h2>
+      <div class="tag-line">実機の代わり。ここの状態は、猟師には直接は見えません。</div>
+
+      <h3>時間を進める</h3>
+      <div class="btns">
+        <button type="button" id="adv-10">10分進める</button>
+        <button type="button" id="adv-60">1時間進める</button>
+        <button type="button" id="adv-360">6時間進める</button>
+        <button type="button" id="adv-morning">翌朝6時まで進める</button>
+      </div>
+
+      <h3>生存確認の間隔</h3>
+      <div class="btns" role="group" aria-label="生存確認の間隔">
+        <button type="button" id="interval-1" aria-pressed="false">1時間</button>
+        <button type="button" id="interval-6" aria-pressed="true">6時間</button>
+        <button type="button" id="interval-24" aria-pressed="false">24時間</button>
+      </div>
+
+      <h3>罠ごとの操作</h3>
+      <ul class="plain" id="sim-list"></ul>
+
+      <h3>全体</h3>
+      <div class="btns">
+        <button type="button" id="reset" class="danger">初期状態に戻す</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="about" aria-labelledby="h-about">
+    <h2 id="h-about">このモックの中身</h2>
+    <dl>
+      <div>
+        <dt>センサー</dt>
+        <dd><b>本物と同じ考え方：</b>イベントに発生時刻と連番を付け、送れなかった分を端末が持ち続ける。キューがあふれたら生存確認から捨て、作動は残す。電池0%では何も出せない。<br><b>シミュレート：</b>作動の検知そのもの（ボタンで代用）。電池は時間では減らず、ボタンで指定した値になる。</dd>
+      </div>
+      <div>
+        <dt>通信</dt>
+        <dd><b>本物と同じ考え方：</b>電波がある時は溜めた分を発生順にまとめて送り、ない時は保持して、戻ったら再送する。<br><b>シミュレート：</b>電波は「あり／なし」の二択。送信は必ず一瞬で成功し、再送の間隔や電波の揺らぎはない。</dd>
+      </div>
+      <div>
+        <dt>サーバー</dt>
+        <dd><b>本物と同じ考え方：</b>連番で重複を捨てる。生存確認が「間隔×1.5」以内に届いている罠だけを「作動なし（確認済み）」とし、届かなければ「不明」にして1回だけ知らせる。通知が来ないことを「かかっていない」とは扱わない。<br><b>シミュレート：</b>このブラウザの中で動く。落ちたり遅れたりしない。</dd>
+      </div>
+      <div>
+        <dt>通知配信</dt>
+        <dd><b>本物と同じ考え方：</b>発生から受信まで10分以上あいたものに「遅れて届いた」を付ける。<br><b>シミュレート：</b>上の履歴に並べるだけ。スマホへのプッシュやLINEで本当に届くか、届かない時に気づけるかは、このモックでは確かめられない。</dd>
+      </div>
+    </dl>
+  </section>
+</div>
+
+<script src="logic.js"></script>
+<script>
+(function () {
+  var L = window.TrapLogic;
+  var S = L.createState();
+
+  var STATUS = {
+    fired:   { label: '作動',               cls: 'fired' },
+    unknown: { label: '不明（通信なし）',   cls: 'unknown' },
+    ok:      { label: '作動なし（確認済み）', cls: 'ok' }
+  };
+  var NOTE_LABEL = { fire: '作動', alive_lost: '通信が途絶えた', battery_low: '電池低下' };
+
+  function esc(t) {
+    return String(t).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function $(id) { return document.getElementById(id); }
+
+  function badge(status) {
+    var d = STATUS[status];
+    return '<span class="badge ' + d.cls + '"><span class="shape ' + d.cls + '" aria-hidden="true"></span>' + d.label + '</span>';
+  }
+
+  function reasonText(st) {
+    if (st.status === 'fired') {
+      return '作動を受信済み（発生 ' + L.formatTime(st.firedAt) + '）。行って確認する。';
+    }
+    if (st.status === 'unknown') {
+      return '最後の確認から ' + L.formatDuration(st.ageMin) + ' たち、期限（' + L.formatDuration(st.limitMin) + '）を超えた。かかっているか分からないので、行って確かめる。';
+    }
+    return '生存確認が届いている（最後の確認 ' + L.formatTime(st.evidenceAt) + '、あと ' + L.formatDuration(st.limitMin - st.ageMin) + ' 以内に次の確認が必要）。';
+  }
+
+  function renderHunter() {
+    var sum = L.morningSummary(S);
+    var html = '<p class="big">行く必要がある罠 ' + sum.go.length + '基／行かなくてよい罠 ' + sum.stay.length + '基</p>';
+    if (sum.go.length) {
+      html += '<p class="go-list">行く：' + sum.go.map(function (g) { return esc(g.name) + '（' + STATUS[g.status].label + '）'; }).join('、') + '</p>';
+    } else {
+      html += '<p class="go-list">すべて、生存確認が届いていて作動なしです。</p>';
+    }
+    $('summary').innerHTML = html;
+    $('clock').textContent = L.formatTime(S.now);
+
+    $('trap-list').innerHTML = L.allStatuses(S).map(function (st) {
+      return '<li class="trap s-' + st.status + '" id="row-' + st.id + '">' +
+        '<div class="trap-head"><span class="trap-name">' + esc(st.name) + '<span class="trap-type">' + esc(st.type) + '</span></span>' + badge(st.status) + '</div>' +
+        '<div class="reason">' + esc(reasonText(st)) + '</div>' +
+        '<div class="trap-meta">' +
+          '<span>最後に通信できた：' + L.formatTime(st.lastRxAt) + '（' + L.formatDuration(S.now - st.lastRxAt) + '前）</span>' +
+          '<span>電池 ' + st.battery + '%' + (st.lowBattery ? ' <span class="badge low">電池低下</span>' : '') + '</span>' +
+        '</div></li>';
+    }).join('');
+
+    var notes = L.notifications(S);
+    $('notif-list').innerHTML = notes.length ? notes.map(function (n) {
+      var late = n.delayed ? '<span class="badge late">遅れて届いた（' + L.formatDuration(n.delayMin) + '遅れ）</span>' : '';
+      var occ = n.type === 'alive_lost' ? '検知 ' : '発生 ';
+      return '<li class="note"><div class="note-head"><span>' + esc(n.trapName) + '：' + NOTE_LABEL[n.type] + '</span>' + late + '</div>' +
+        '<div class="note-times">' + occ + L.formatTime(n.occurredAt) + '／受信 ' + L.formatTime(n.receivedAt) + '</div></li>';
+    }).join('') : '<li class="empty">通知はまだありません。</li>';
+  }
+
+  function renderSim() {
+    $('sim-list').innerHTML = S.sensors.map(function (s) {
+      return '<li class="sim-trap"><div class="trap-name">' + esc(s.name) + '<span class="trap-type">' + esc(s.type) + '</span></div>' +
+        '<div class="sim-state">' +
+          '<span>罠：' + (s.fired ? '作動済み' : '掛け済み') + '</span>' +
+          '<span>電波：' + (s.signal ? 'あり' : 'なし') + '</span>' +
+          '<span>電池：' + s.battery + '%</span>' +
+          '<span id="queue-' + s.id + '"><b>未送信 ' + s.queue.length + '件</b>' + (s.queue.length ? '（電波が戻るまで端末が保持）' : '') + '</span>' +
+        '</div>' +
+        '<div class="btns">' +
+          '<button type="button" id="fire-' + s.id + '" data-act="fire" data-id="' + s.id + '">作動させる</button>' +
+          '<button type="button" id="signal-' + s.id + '" data-act="signal" data-id="' + s.id + '">' + (s.signal ? '電波を切る' : '電波を戻す') + '</button>' +
+          '<button type="button" id="battery-' + s.id + '" data-act="battery" data-id="' + s.id + '">電池を10%にする</button>' +
+          '<button type="button" id="rearm-' + s.id + '" data-act="rearm" data-id="' + s.id + '">掛け直す</button>' +
+        '</div></li>';
+    }).join('');
+    [['interval-1', 60], ['interval-6', 360], ['interval-24', 1440]].forEach(function (p) {
+      $(p[0]).setAttribute('aria-pressed', S.config.aliveIntervalMin === p[1] ? 'true' : 'false');
+    });
+  }
+
+  function render() {
+    var active = document.activeElement && document.activeElement.id;
+    renderHunter();
+    renderSim();
+    if (active) { var el = $(active); if (el) el.focus(); }
+  }
+
+  $('sim-list').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-act]');
+    if (!b) return;
+    var id = b.getAttribute('data-id');
+    var act = b.getAttribute('data-act');
+    var s = S.sensors.filter(function (x) { return x.id === id; })[0];
+    if (act === 'fire') L.fireTrap(S, id);
+    else if (act === 'signal') L.setSignal(S, id, !s.signal);
+    else if (act === 'battery') L.setBattery(S, id, 10);
+    else if (act === 'rearm') L.rearm(S, id);
+    render();
+  });
+  [['adv-10', 10], ['adv-60', 60], ['adv-360', 360]].forEach(function (p) {
+    $(p[0]).addEventListener('click', function () { L.advance(S, p[1]); render(); });
+  });
+  $('adv-morning').addEventListener('click', function () { L.advanceToMorning(S, 6); render(); });
+  [['interval-1', 60], ['interval-6', 360], ['interval-24', 1440]].forEach(function (p) {
+    $(p[0]).addEventListener('click', function () { L.setAliveInterval(S, p[1]); render(); });
+  });
+  $('reset').addEventListener('click', function () { S = L.createState(); render(); });
+
+  render();
+})();
+</script>
